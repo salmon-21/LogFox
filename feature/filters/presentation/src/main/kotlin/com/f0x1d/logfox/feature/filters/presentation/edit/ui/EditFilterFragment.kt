@@ -118,9 +118,8 @@ internal class EditFilterFragment :
         binding.apply {
             updateIncludingButton(state.including)
             updateEnabledButton(state.enabled)
+            updateTitle(state.name)
 
-            toolbar.title = state.name?.takeIf { it.isNotBlank() }
-                ?: getString(Strings.filter_name_hint)
             setTextIfDifferent(uidText, state.uid.orEmpty())
             setTextIfDifferent(pidText, state.pid.orEmpty())
             setTextIfDifferent(tidText, state.tid.orEmpty())
@@ -145,6 +144,20 @@ internal class EditFilterFragment :
             // Business logic side effects are handled by EffectHandler
             else -> Unit
         }
+    }
+
+    private fun FragmentEditFilterBinding.updateTitle(name: String?) = toolbar.run {
+        title = name ?: getString(Strings.filter_name_hint)
+        setTitleTextColor(
+            MaterialColors.getColor(
+                this,
+                if (name == null) {
+                    android.R.attr.textColorHint
+                } else {
+                    com.google.android.material.R.attr.colorOnSurface
+                },
+            ),
+        )
     }
 
     private fun FragmentEditFilterBinding.updateIncludingButton(including: Boolean) = includingButton.run {
@@ -192,6 +205,7 @@ internal class EditFilterFragment :
     private fun showRenameDialog() = requireContext().showEditTextDialog(
         title = getString(Strings.rename_filter),
         initialText = viewModel.state.value.name,
+        setupViews = { it.textLayout.setHint(Strings.filter_name) },
         setupDialog = { setIcon(Icons.ic_dialog_text_fields) },
     ) { newName ->
         send(EditFilterCommand.UpdateName(newName.orEmpty()))

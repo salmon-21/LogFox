@@ -16,6 +16,7 @@
     <string name="filter">Filter</string>
     <string name="create_filter">Create filter</string>
     <string name="filter_name_hint">Untitled filter</string>
+    <string name="filter_name">Filter name</string>
     <string name="rename_filter">Rename filter</string>
     <string name="about_app">About app</string>
     <string name="root" translatable="false">Root</string>
