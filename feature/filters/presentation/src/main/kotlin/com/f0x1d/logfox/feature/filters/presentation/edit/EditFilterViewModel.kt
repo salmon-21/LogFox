@@ -34,22 +34,8 @@ internal class EditFilterViewModel @Inject constructor(
 }
 
 private fun EditFilterArgs.toInitialState(): EditFilterState {
-    if (!hasInitialData) return EditFilterState(
-        filter = null,
-        name = null,
-        including = true,
-        enabled = true,
-        enabledLogLevels = List(LogLevel.entries.size) { false },
-        uid = null,
-        pid = null,
-        tid = null,
-        packageName = null,
-        tag = null,
-        content = null,
-    )
-
     val enabledLogLevels = MutableList(LogLevel.entries.size) { false }
-    if (level != null && level >= 0 && level < LogLevel.entries.size) {
+    if (hasInitialData && level != null && level >= 0 && level < LogLevel.entries.size) {
         enabledLogLevels[level] = true
     }
 
@@ -65,5 +51,8 @@ private fun EditFilterArgs.toInitialState(): EditFilterState {
         packageName = packageName,
         tag = tag,
         content = content,
+        // Baseline is the empty filter, so prefilled fields (from a log line) count as unsaved
+        // changes — backing out of them prompts to discard — while a blank new filter stays clean.
+        initial = EditFilterSnapshot.empty,
     )
 }

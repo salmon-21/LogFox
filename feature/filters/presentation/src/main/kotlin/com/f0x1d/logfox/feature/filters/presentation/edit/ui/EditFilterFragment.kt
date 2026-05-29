@@ -5,15 +5,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.fragment.hiltNavGraphViewModels
 import androidx.navigation.fragment.findNavController
 import com.f0x1d.logfox.core.tea.BaseStoreFragment
 import com.f0x1d.logfox.core.ui.base.ext.doAfterTextChanged
+import com.f0x1d.logfox.core.ui.dialog.showAreYouSureDialog
 import com.f0x1d.logfox.core.ui.dialog.showEditTextDialog
 import com.f0x1d.logfox.core.ui.icons.Icons
 import com.f0x1d.logfox.core.ui.view.setClickListenerOn
-import com.f0x1d.logfox.core.ui.view.setupBackButtonForNavController
+import com.f0x1d.logfox.core.ui.view.setupBackButton
 import com.f0x1d.logfox.core.ui.view.setupClickableTitle
 import com.f0x1d.logfox.feature.filters.presentation.R
 import com.f0x1d.logfox.feature.filters.presentation.databinding.FragmentEditFilterBinding
@@ -51,6 +53,13 @@ internal class EditFilterFragment :
         uri?.let { send(EditFilterCommand.Export(it)) }
     }
 
+    // Enabled only while the form has unsaved changes; intercepts system/predictive back to confirm.
+    private val confirmDiscardOnBackPressedCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            attemptClose()
+        }
+    }
+
     override fun inflateBinding(inflater: LayoutInflater, container: ViewGroup?) = FragmentEditFilterBinding.inflate(inflater, container, false)
 
     override fun FragmentEditFilterBinding.onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -74,7 +83,7 @@ internal class EditFilterFragment :
             }
         }
 
-        toolbar.setupBackButtonForNavController()
+        toolbar.setupBackButton { attemptClose() }
         toolbar.menu.apply {
             setClickListenerOn(R.id.export_item) {
                 exportFilterLauncher.launch("filter.json")
@@ -83,6 +92,11 @@ internal class EditFilterFragment :
         toolbar.setupClickableTitle(
             background = com.f0x1d.logfox.core.ui.view.R.drawable.bg_toolbar_title_clickable,
         ) { showRenameDialog() }
+
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            confirmDiscardOnBackPressedCallback,
+        )
 
         includingButton.setOnClickListener {
             send(EditFilterCommand.ToggleIncluding)
@@ -115,6 +129,8 @@ internal class EditFilterFragment :
     }
 
     override fun render(state: EditFilterViewState) {
+        confirmDiscardOnBackPressedCallback.isEnabled = state.isDirty
+
         binding.apply {
             updateIncludingButton(state.including)
             updateEnabledButton(state.enabled)
@@ -209,6 +225,19 @@ internal class EditFilterFragment :
         setupDialog = { setIcon(Icons.ic_dialog_text_fields) },
     ) { newName ->
         send(EditFilterCommand.UpdateName(newName.orEmpty()))
+    }
+
+    private fun attemptClose() {
+        if (viewModel.state.value.isDirty) {
+            showAreYouSureDialog(
+                title = Strings.discard_changes,
+                message = Strings.discard_changes_message,
+            ) {
+                findNavController().popBackStack()
+            }
+        } else {
+            findNavController().popBackStack()
+        }
     }
 
     private fun showFilterDialog() {

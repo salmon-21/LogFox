@@ -39,7 +39,7 @@ internal class EditFilterReducer @Inject constructor(
                 packageName = command.filter.packageName,
                 tag = command.filter.tag,
                 content = command.filter.content,
-            ).noSideEffects()
+            ).withInitialBaseline().noSideEffects()
         }
 
         is EditFilterCommand.UpdateName -> {
