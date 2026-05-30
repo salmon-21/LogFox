@@ -23,6 +23,12 @@ internal sealed interface EditFilterCommand {
     data object Save : EditFilterCommand
     data class Export(val uri: Uri) : EditFilterCommand
 
+    // Close requested (back button/arrow/predictive back); reducer decides whether to confirm.
+    data object AttemptClose : EditFilterCommand
+
+    // User confirmed discarding unsaved changes in the dialog; close unconditionally.
+    data object AttemptCloseConfirmed : EditFilterCommand
+
     // Navigation
     data object SelectApp : EditFilterCommand
 }

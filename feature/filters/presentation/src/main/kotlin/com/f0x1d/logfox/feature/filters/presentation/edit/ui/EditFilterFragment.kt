@@ -53,10 +53,10 @@ internal class EditFilterFragment :
         uri?.let { send(EditFilterCommand.Export(it)) }
     }
 
-    // Enabled only while the form has unsaved changes; intercepts system/predictive back to confirm.
+    // Enabled only while the form has unsaved changes; routes system/predictive back through TEA.
     private val confirmDiscardOnBackPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
-            attemptClose()
+            send(EditFilterCommand.AttemptClose)
         }
     }
 
@@ -83,7 +83,7 @@ internal class EditFilterFragment :
             }
         }
 
-        toolbar.setupBackButton { attemptClose() }
+        toolbar.setupBackButton { send(EditFilterCommand.AttemptClose) }
         toolbar.menu.apply {
             setClickListenerOn(R.id.export_item) {
                 exportFilterLauncher.launch("filter.json")
@@ -157,6 +157,15 @@ internal class EditFilterFragment :
                 findNavController().popBackStack()
             }
 
+            is EditFilterSideEffect.ConfirmDiscard -> {
+                showAreYouSureDialog(
+                    title = Strings.discard_changes,
+                    message = Strings.discard_changes_message,
+                ) {
+                    send(EditFilterCommand.AttemptCloseConfirmed)
+                }
+            }
+
             // Business logic side effects are handled by EffectHandler
             else -> Unit
         }
@@ -225,19 +234,6 @@ internal class EditFilterFragment :
         setupDialog = { setIcon(Icons.ic_dialog_text_fields) },
     ) { newName ->
         send(EditFilterCommand.UpdateName(newName.orEmpty()))
-    }
-
-    private fun attemptClose() {
-        if (viewModel.state.value.isDirty) {
-            showAreYouSureDialog(
-                title = Strings.discard_changes,
-                message = Strings.discard_changes_message,
-            ) {
-                findNavController().popBackStack()
-            }
-        } else {
-            findNavController().popBackStack()
-        }
     }
 
     private fun showFilterDialog() {
